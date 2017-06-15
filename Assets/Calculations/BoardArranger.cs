@@ -5,7 +5,10 @@ using UnityEngine;
 public class BoardArranger : MonoBehaviour {
 	char[] tileValues = new char[] {'0','1','2','3','4','5','6','7','8','9','+','-','*','/','^'};
 	public GameObject tileObj;
-	public float tileWidth;
+	public float tileWidthInWorldUnits;
+	public float screenWidthInWorldUnits;
+	public float tileBufferInWorldUnits;
+	private float tilesPerRow;
 
 	private float distance;
 	private Vector3 leftmost;
@@ -18,9 +21,12 @@ public class BoardArranger : MonoBehaviour {
 		for (var i = 0; i < tileValues.Length; i++){
 			distance = -1*Camera.main.transform.position.z;
 			leftmost = Camera.main.ViewportToWorldPoint(new Vector3(0f,0f,distance));
-			rightmost = Camera.main.ViewportToWorldPoint(new Vector3(1f,0.1f,distance));
-			tileWidth = tileObj.GetComponent<Renderer>().bounds.size.x;
-			GameObject tile = Instantiate(tileObj, getTilePosition(transform.position, i), Quaternion.identity) as GameObject;
+			rightmost = Camera.main.ViewportToWorldPoint(new Vector3(1f,0f,distance));
+			screenWidthInWorldUnits = (rightmost - leftmost).x;
+			tileWidthInWorldUnits = tileObj.GetComponent<Renderer>().bounds.size.x;
+			tileBufferInWorldUnits = tileWidthInWorldUnits/5;
+			tilesPerRow = getTilesPerRow(tileWidthInWorldUnits, tileBufferInWorldUnits, screenWidthInWorldUnits);
+			GameObject tile = Instantiate(tileObj, getTilePosition(transform.position, i, tilesPerRow), Quaternion.identity) as GameObject;
 			Tile tileScript = tile.GetComponent<Tile>();
 			tileScript.setValue(tileValues[i]);
 		}
@@ -31,7 +37,12 @@ public class BoardArranger : MonoBehaviour {
 		
 	}
 
-	private Vector3 getTilePosition (Vector3 v, float i) {
-		return leftmost + new Vector3(i*tileWidth+tileWidth/2+(i/5),tileWidth,0);
+	private Vector3 getTilePosition (Vector3 v, float i, float tpr) {
+		// I need to make this more generally useable to make responsive ui.
+		return leftmost + new Vector3(i*tileWidthInWorldUnits+tileWidthInWorldUnits/2+(i/5),tileWidthInWorldUnits,0);
+	}
+
+	private float getTilesPerRow(float tileWidthInWorldUnits, float tileBufferInWorldUnits, float screenWidthInWorldUnits) {
+		return Mathf.Floor(screenWidthInWorldUnits/(tileWidthInWorldUnits+tileBufferInWorldUnits));
 	}
 }
